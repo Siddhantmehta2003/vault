@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:password_manager/features/ui/techno_background.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:flutter/services.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -12,8 +14,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _controller = TextEditingController();
+  final LocalAuthentication auth = LocalAuthentication();
   bool? _isSetup;
   bool _isLoading = true;
+  bool _canCheckBiometrics = false;
 
   @override
   void initState() {
@@ -24,13 +28,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _checkSetup() async {
     try {
       final isSetup = await ref.read(authProvider.notifier).isPasswordSet();
+
+      bool canCheck = false;
+      bool isSupported = false;
+
+      try {
+        canCheck = await auth.canCheckBiometrics;
+        isSupported = await auth.isDeviceSupported();
+      } catch (e) {
+        // Biometrics might fail if plugin is not attached or on unsupported platform
+        // We catch it here so it doesn't block the main app login
+        print('Biometric initialization failed: $e');
+      }
+
       if (mounted) {
         setState(() {
           _isSetup = isSetup;
+          _canCheckBiometrics = canCheck && isSupported;
           _isLoading = false;
         });
       }
     } catch (e) {
+      print('Critical setup failed: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -147,12 +166,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                if (isSetup && _canCheckBiometrics) ...[
+                  const SizedBox(height: 24),
+                  IconButton(
+                    iconSize: 64,
+                    icon: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF00FFC2), Color(0xFFD600FF)],
+                      ).createShader(bounds),
+                      child: const Icon(Icons.fingerprint),
+                    ),
+                    onPressed: _authenticateWithBiometrics,
+                    tooltip: 'Biometric Access',
+                  ),
+                  Text(
+                    'BIOMETRIC ACCESS',
+                    style: TextStyle(
+                      color: const Color(0xFF00FFC2).withOpacity(0.5),
+                      letterSpacing: 2,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      final authenticated = await auth.authenticate(
+        localizedReason: 'Scan your biometric to authenticate',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+      if (authenticated && mounted) {
+        ref.read(authProvider.notifier).unlockWithBiometrics();
+      }
+    } on PlatformException catch (e) {
+      if (mounted) _showError(e.message ?? 'Biometric Error');
+    }
   }
 
   Future<void> _submit(bool isSetup) async {

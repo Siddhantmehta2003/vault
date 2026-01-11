@@ -22,6 +22,10 @@ class AuthNotifier extends StateNotifier<bool> {
     state = isValid;
   }
 
+  void unlockWithBiometrics() {
+    state = true;
+  }
+
   void lock() {
     state = false;
   }
