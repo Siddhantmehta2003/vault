@@ -147,11 +147,13 @@ class VaultScreen extends ConsumerWidget {
                 },
               ),
       ),
-      floatingActionButton: FloatingActionButton(
+            floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00FFC2),
         foregroundColor: Colors.black,
         elevation: 10,
-        shape: const RoundedRectangleBorder(), // Square/tech shape
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         onPressed: () {
           Navigator.push(
             context,
@@ -159,7 +161,7 @@ class VaultScreen extends ConsumerWidget {
           );
         },
         child: const Icon(Icons.add),
-      ),
+      ), 
     );
   }
 }

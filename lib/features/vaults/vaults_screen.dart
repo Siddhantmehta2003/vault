@@ -140,7 +140,8 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12)),
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const AddPasswordScreen()),

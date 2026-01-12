@@ -158,7 +158,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
           controller: _tabController,
           indicatorColor: AppColors.purple,
           labelColor: AppColors.purple,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          unselectedLabelColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           tabs: const [
             Tab(text: 'Members'),
             Tab(text: 'Shared Vaults'),
@@ -195,6 +196,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
           _tabController.index == 0 ? 'Invite' : 'New Vault',
           style: const TextStyle(color: Colors.white),
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -219,9 +221,16 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem('${_teamMembers.length}', 'Members'),
-              Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.3)),
-              _buildStatItem('${_teamMembers.where((m) => m.isOnline).length}', 'Online'),
-              Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.3)),
+              Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.white.withValues(alpha: 0.3)),
+              _buildStatItem(
+                  '${_teamMembers.where((m) => m.isOnline).length}', 'Online'),
+              Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.white.withValues(alpha: 0.3)),
               _buildStatItem('${_sharedVaults.length}', 'Vaults'),
             ],
           ),
@@ -308,7 +317,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                       color: AppColors.green,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                        color: isDark
+                            ? AppColors.darkBgSecondary
+                            : AppColors.lightBgSecondary,
                         width: 2,
                       ),
                     ),
@@ -333,7 +344,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                   member.email,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -374,7 +388,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                   children: [
                     Icon(Icons.person_remove, size: 20, color: AppColors.red),
                     const SizedBox(width: 12),
-                    const Text('Remove', style: TextStyle(color: AppColors.red)),
+                    const Text('Remove',
+                        style: TextStyle(color: AppColors.red)),
                   ],
                 ),
               ),
@@ -416,7 +431,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                 child: Text(
                   'Shared vaults allow you to securely share passwords with your team members.',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
                 ),
@@ -441,7 +459,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
   }
 
   Widget _buildVaultCard(SharedVault vault, bool isDark) {
-    final members = _teamMembers.where((m) => vault.memberIds.contains(m.id)).toList();
+    final members =
+        _teamMembers.where((m) => vault.memberIds.contains(m.id)).toList();
 
     return GestureDetector(
       onTap: () => _showComingSoon(),
@@ -449,7 +468,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+          color:
+              isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -468,7 +488,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                     color: AppColors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.folder_shared, color: AppColors.purple),
+                  child:
+                      const Icon(Icons.folder_shared, color: AppColors.purple),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -486,7 +507,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                         '${vault.passwordCount} passwords',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -516,7 +540,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                               color: members[i].avatarColor,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                                color: isDark
+                                    ? AppColors.darkBgSecondary
+                                    : AppColors.lightBgSecondary,
                                 width: 2,
                               ),
                             ),
@@ -542,7 +568,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                               color: Colors.grey,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                                color: isDark
+                                    ? AppColors.darkBgSecondary
+                                    : AppColors.lightBgSecondary,
                                 width: 2,
                               ),
                             ),
@@ -566,7 +594,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen>
                   'by ${vault.createdBy}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
                   ),
                 ),
               ],
