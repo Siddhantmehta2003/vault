@@ -36,10 +36,10 @@ class TechnoBackground extends StatelessWidget {
             height: 300,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF00FFC2).withOpacity(0.05),
+              color: const Color(0xFF00FFC2).withValues(alpha:0.05),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF00FFC2).withOpacity(0.1),
+                  color: const Color(0xFF00FFC2).withValues(alpha:0.1),
                   blurRadius: 100,
                   spreadRadius: 50,
                 ),
@@ -55,10 +55,10 @@ class TechnoBackground extends StatelessWidget {
             height: 300,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFD600FF).withOpacity(0.05),
+              color: const Color(0xFFD600FF).withValues(alpha:0.05),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFD600FF).withOpacity(0.1),
+                  color: const Color(0xFFD600FF).withValues(alpha:0.1),
                   blurRadius: 100,
                   spreadRadius: 50,
                 ),
@@ -77,7 +77,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF00FFC2).withOpacity(0.03)
+      ..color = const Color(0xFF00FFC2).withValues(alpha:0.03)
       ..strokeWidth = 1;
 
     const spacing = 40.0;

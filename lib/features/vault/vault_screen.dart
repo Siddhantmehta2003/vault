@@ -35,12 +35,12 @@ class VaultScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.sd_storage_outlined,
-                        size: 64, color: Colors.white.withOpacity(0.2)),
+                        size: 64, color: Colors.white.withValues(alpha:0.2)),
                     const SizedBox(height: 16),
                     Text(
                       'NO ENCRYPTED DATA FOUND',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha:0.5),
                         fontFamily: 'Courier',
                         letterSpacing: 2,
                       ),
@@ -57,15 +57,15 @@ class VaultScreen extends ConsumerWidget {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF101020).withOpacity(0.8),
+                      color: const Color(0xFF101020).withValues(alpha:0.8),
                       border: Border.all(
-                        color: const Color(0xFF00FFC2).withOpacity(0.3),
+                        color: const Color(0xFF00FFC2).withValues(alpha:0.3),
                       ),
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF00FFC2)
-                              .withOpacity(index % 2 == 0 ? 0.05 : 0),
+                              .withValues(alpha:index % 2 == 0 ? 0.05 : 0),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         )
@@ -76,7 +76,7 @@ class VaultScreen extends ConsumerWidget {
                       leading: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00FFC2).withOpacity(0.1),
+                          color: const Color(0xFF00FFC2).withValues(alpha:0.1),
                           shape: BoxShape.circle,
                         ),
                         child:
@@ -97,7 +97,7 @@ class VaultScreen extends ConsumerWidget {
                           Text(
                             'USR: ${item.username}',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Colors.white.withValues(alpha:0.6),
                               fontFamily: 'Courier',
                             ),
                           ),
@@ -125,7 +125,7 @@ class VaultScreen extends ConsumerWidget {
                                 SnackBar(
                                   content: const Text('DECRYPTED TO CLIPBOARD'),
                                   backgroundColor:
-                                      const Color(0xFF00FFC2).withOpacity(0.2),
+                                      const Color(0xFF00FFC2).withValues(alpha:0.2),
                                 ),
                               );
                             },

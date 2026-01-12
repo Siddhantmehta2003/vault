@@ -22,6 +22,12 @@ class PasswordModel extends HiveObject {
   @HiveField(5)
   String notes;
 
+  @HiveField(6)
+  String category;
+
+  @HiveField(7)
+  DateTime createdAt;
+
   PasswordModel({
     required this.id,
     required this.title,
@@ -29,5 +35,7 @@ class PasswordModel extends HiveObject {
     required this.password,
     required this.url,
     required this.notes,
-  });
+    this.category = 'Personal',
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 }
