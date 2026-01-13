@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/password_strength_indicator.dart';
 import '../../widgets/password_generator_dialog.dart';
+import '../vault/vault_provider.dart';
 import '../vault/models/password_model.dart';
 
 class EditPasswordScreen extends ConsumerStatefulWidget {
@@ -60,7 +61,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
     super.dispose();
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon, {Widget? suffix}) {
+  InputDecoration _buildInputDecoration(String label, IconData icon,
+      {Widget? suffix}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
@@ -71,7 +73,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
         fontSize: 14,
       ),
       filled: true,
-      fillColor: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+      fillColor:
+          isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
           color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -128,7 +131,9 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                color: isDark
+                    ? AppColors.darkBgSecondary
+                    : AppColors.lightBgSecondary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -160,7 +165,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                   TextFormField(
                     controller: _titleController,
                     cursorColor: AppColors.purple,
-                    decoration: _buildInputDecoration('Title', Icons.label_outline),
+                    decoration:
+                        _buildInputDecoration('Title', Icons.label_outline),
                     validator: (v) => v!.isEmpty ? 'Title is required' : null,
                   ),
                   const SizedBox(height: 20),
@@ -169,7 +175,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                   TextFormField(
                     controller: _usernameController,
                     cursorColor: AppColors.purple,
-                    decoration: _buildInputDecoration('Username / Email', Icons.person_outline),
+                    decoration: _buildInputDecoration(
+                        'Username / Email', Icons.person_outline),
                   ),
                   const SizedBox(height: 20),
 
@@ -184,10 +191,13 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                       Icons.lock_outline,
                       suffix: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: AppColors.purple,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                     ),
                   ),
@@ -218,7 +228,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                   TextFormField(
                     controller: _urlController,
                     cursorColor: AppColors.purple,
-                    decoration: _buildInputDecoration('Website URL', Icons.link),
+                    decoration:
+                        _buildInputDecoration('Website URL', Icons.link),
                   ),
                   const SizedBox(height: 20),
 
@@ -226,7 +237,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                   TextFormField(
                     controller: _notesController,
                     cursorColor: AppColors.purple,
-                    decoration: _buildInputDecoration('Notes (optional)', Icons.note_outlined),
+                    decoration: _buildInputDecoration(
+                        'Notes (optional)', Icons.note_outlined),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 32),
@@ -235,30 +247,33 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
                   SizedBox(
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _hasChanges ? _save : null,
+                      onPressed: (_hasChanges && !_isSaving) ? _save : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.purple,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: AppColors.purple.withValues(alpha: 0.3),
+                        disabledBackgroundColor:
+                            AppColors.purple.withValues(alpha: 0.3),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.save, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Save Changes',
-                            style: GoogleFonts.syne(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                      child: _isSaving
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.save, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Save Changes',
+                                  style: GoogleFonts.syne(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
@@ -272,7 +287,14 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
 
   Widget _buildCategorySelector() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = ['Personal', 'Work', 'Finance', 'Social', 'Development', 'Other'];
+    final categories = [
+      'Personal',
+      'Work',
+      'Finance',
+      'Social',
+      'Development',
+      'Other'
+    ];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -294,7 +316,8 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
               value: category,
               child: Row(
                 children: [
-                  Icon(_getCategoryIcon(category), color: AppColors.purple, size: 20),
+                  Icon(_getCategoryIcon(category),
+                      color: AppColors.purple, size: 20),
                   const SizedBox(width: 12),
                   Text(category),
                 ],
@@ -347,9 +370,11 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text('Discard Changes?'),
-            content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+            content: const Text(
+                'You have unsaved changes. Are you sure you want to discard them?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -369,30 +394,54 @@ class _EditPasswordScreenState extends ConsumerState<EditPasswordScreen> {
         false;
   }
 
-  void _save() {
+  bool _isSaving = false;
+
+  Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
-      // Update the password object
-      widget.password.title = _titleController.text;
-      widget.password.username = _usernameController.text;
-      widget.password.password = _passwordController.text;
-      widget.password.url = _urlController.text;
-      widget.password.notes = _notesController.text;
-      widget.password.category = _selectedCategory;
+      setState(() => _isSaving = true);
+      try {
+        final updatedPass = PasswordModel(
+          id: widget.password.id,
+          title: _titleController.text,
+          username: _usernameController.text,
+          password: _passwordController.text,
+          url: _urlController.text,
+          notes: _notesController.text,
+          category: _selectedCategory,
+          createdAt: widget.password.createdAt,
+        );
 
-      // Save to Hive
-      widget.password.save();
+        await ref.read(vaultProvider.notifier).updatePassword(updatedPass);
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Password updated successfully!'),
-          backgroundColor: AppColors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-
-      Navigator.pop(context);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Password updated successfully!'),
+              backgroundColor: AppColors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update: $e'),
+              backgroundColor: AppColors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
+        }
+      }
     }
   }
 }

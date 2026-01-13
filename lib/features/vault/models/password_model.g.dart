@@ -23,7 +23,7 @@ class PasswordModelAdapter extends TypeAdapter<PasswordModel> {
       password: fields[3] as String,
       url: fields[4] as String,
       notes: fields[5] as String,
-      category: fields[6] as String? ?? 'Personal',
+      category: fields[6] as String,
       createdAt: fields[7] as DateTime?,
     );
   }

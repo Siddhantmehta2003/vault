@@ -12,246 +12,284 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
-    final passwords = ref.watch(vaultProvider);
+    final passwordsAsync = ref.watch(vaultProvider);
+    final usernameAsync = ref.watch(usernameProvider);
+    final emailAsync = ref.watch(emailProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: RichText(
-          text: TextSpan(
-            style: GoogleFonts.syne(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-            children: const [
-              TextSpan(
-                text: 'My ',
-                style: TextStyle(color: AppColors.purple),
+        appBar: AppBar(
+          title: RichText(
+            text: TextSpan(
+              style: GoogleFonts.syne(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
               ),
-              TextSpan(text: 'Profile'),
-            ],
-          ),
-        ),
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                width: 2,
-              ),
+              children: const [
+                TextSpan(
+                  text: 'My ',
+                  style: TextStyle(color: AppColors.purple),
+                ),
+                TextSpan(text: 'Profile'),
+              ],
             ),
-            child: const Icon(Icons.arrow_back, size: 20),
           ),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // Profile Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
+          leading: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.purple,
-                    AppColors.purple.withValues(alpha: 0.8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: isDark
+                    ? AppColors.darkBgSecondary
+                    : AppColors.lightBgSecondary,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(24),
               ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'JD',
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'John Doe',
-                    style: GoogleFonts.syne(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'john.doe@example.com',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.verified, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'Premium User',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              child: const Icon(Icons.arrow_back, size: 20),
             ),
-            const SizedBox(height: 24),
-
-            // Stats Cards
-            Row(
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: passwordsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.purple),
+          ),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Icons.lock,
-                    value: '${passwords.length}',
-                    label: 'Passwords',
-                    color: AppColors.purple,
-                    isDark: isDark,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Icons.folder,
-                    value: '${_getUniqueCategories(passwords)}',
-                    label: 'Categories',
-                    color: AppColors.blue,
-                    isDark: isDark,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    icon: Icons.security,
-                    value: '${_getStrongPasswords(passwords)}',
-                    label: 'Strong',
-                    color: AppColors.green,
-                    isDark: isDark,
-                  ),
+                const Icon(Icons.error_outline, size: 60, color: AppColors.red),
+                const SizedBox(height: 16),
+                Text('Sync error: $error'),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () =>
+                      ref.read(vaultProvider.notifier).loadPasswords(),
+                  child: const Text('RETRY SYNC'),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+          ),
+          data: (passwords) => SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                // Profile Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.purple,
+                        AppColors.purple.withValues(alpha: 0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: usernameAsync.when(
+                            data: (username) => Text(
+                              (username ?? 'U').substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            loading: () => const CircularProgressIndicator(
+                                color: Colors.white),
+                            error: (_, __) => const Text('U'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      usernameAsync.when(
+                        data: (username) => Text(
+                          username ?? 'Vault User',
+                          style: GoogleFonts.syne(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        loading: () => const SizedBox(height: 24),
+                        error: (_, __) => const Text('User'),
+                      ),
+                      const SizedBox(height: 4),
+                      emailAsync.when(
+                        data: (email) => Text(
+                          email ?? 'No email saved',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                        loading: () => const SizedBox(height: 14),
+                        error: (_, __) => const Text('No email'),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified, color: Colors.white, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'Premium User',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-            // Profile Options
-            _buildSectionTitle(context, 'Account'),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.person_outline,
-              title: 'Edit Profile',
-              subtitle: 'Update your name and avatar',
-              isDark: isDark,
-              onTap: () => _showComingSoon(context),
-            ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.email_outlined,
-              title: 'Change Email',
-              subtitle: 'Update your email address',
-              isDark: isDark,
-              onTap: () => _showComingSoon(context),
-            ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.lock_outline,
-              title: 'Change Master Password',
-              subtitle: 'Update your master password',
-              isDark: isDark,
-              onTap: () => _showComingSoon(context),
-            ),
-            const SizedBox(height: 24),
+                // Stats Cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        context,
+                        icon: Icons.lock,
+                        value: '${passwords.length}',
+                        label: 'Passwords',
+                        color: AppColors.purple,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        context,
+                        icon: Icons.folder,
+                        value: '${_getUniqueCategories(passwords)}',
+                        label: 'Categories',
+                        color: AppColors.blue,
+                        isDark: isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        context,
+                        icon: Icons.security,
+                        value: '${_getStrongPasswords(passwords)}',
+                        label: 'Strong',
+                        color: AppColors.green,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-            // Security Section
-            _buildSectionTitle(context, 'Security'),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.history,
-              title: 'Login History',
-              subtitle: 'View recent login activity',
-              isDark: isDark,
-              onTap: () => _showComingSoon(context),
-            ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.devices,
-              title: 'Active Sessions',
-              subtitle: 'Manage your active devices',
-              isDark: isDark,
-              onTap: () => _showComingSoon(context),
-            ),
-            const SizedBox(height: 24),
+                // Profile Options
+                _buildSectionTitle(context, 'Account'),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.person_outline,
+                  title: 'Edit Profile',
+                  subtitle: 'Update your name and avatar',
+                  isDark: isDark,
+                  onTap: () => _showComingSoon(context),
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.email_outlined,
+                  title: 'Change Email',
+                  subtitle: 'Update your email address',
+                  isDark: isDark,
+                  onTap: () => _showComingSoon(context),
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.lock_outline,
+                  title: 'Change Master Password',
+                  subtitle: 'Update your master password',
+                  isDark: isDark,
+                  onTap: () => _showComingSoon(context),
+                ),
+                const SizedBox(height: 24),
 
-            // Danger Zone
-            _buildSectionTitle(context, 'Danger Zone'),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.logout,
-              title: 'Lock Vault',
-              subtitle: 'Lock the app immediately',
-              isDark: isDark,
-              iconColor: AppColors.yellow,
-              onTap: () {
-                ref.read(authProvider.notifier).lock();
-                Navigator.pop(context);
-              },
+                // Security Section
+                _buildSectionTitle(context, 'Security'),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.history,
+                  title: 'Login History',
+                  subtitle: 'View recent login activity',
+                  isDark: isDark,
+                  onTap: () => _showComingSoon(context),
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.devices,
+                  title: 'Active Sessions',
+                  subtitle: 'Manage your active devices',
+                  isDark: isDark,
+                  onTap: () => _showComingSoon(context),
+                ),
+                const SizedBox(height: 24),
+
+                // Danger Zone
+                _buildSectionTitle(context, 'Danger Zone'),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.logout,
+                  title: 'Lock Vault',
+                  subtitle: 'Lock the app immediately',
+                  isDark: isDark,
+                  iconColor: AppColors.yellow,
+                  onTap: () {
+                    ref.read(authProvider.notifier).lock();
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildOptionCard(
+                  context,
+                  icon: Icons.delete_forever,
+                  title: 'Delete Account',
+                  subtitle: 'Permanently delete your account',
+                  isDark: isDark,
+                  iconColor: AppColors.red,
+                  onTap: () => _showDeleteAccountDialog(context),
+                ),
+                const SizedBox(height: 32),
+              ],
             ),
-            const SizedBox(height: 12),
-            _buildOptionCard(
-              context,
-              icon: Icons.delete_forever,
-              title: 'Delete Account',
-              subtitle: 'Permanently delete your account',
-              isDark: isDark,
-              iconColor: AppColors.red,
-              onTap: () => _showDeleteAccountDialog(context),
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   Widget _buildStatCard(
@@ -296,7 +334,10 @@ class ProfileScreen extends ConsumerWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -332,7 +373,8 @@ class ProfileScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+          color:
+              isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -368,7 +410,10 @@ class ProfileScreen extends ConsumerWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -376,7 +421,10 @@ class ProfileScreen extends ConsumerWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
             ),
           ],
         ),

@@ -14,7 +14,8 @@ class PasswordDetailsScreen extends ConsumerStatefulWidget {
   const PasswordDetailsScreen({super.key, required this.password});
 
   @override
-  ConsumerState<PasswordDetailsScreen> createState() => _PasswordDetailsScreenState();
+  ConsumerState<PasswordDetailsScreen> createState() =>
+      _PasswordDetailsScreenState();
 }
 
 class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
@@ -23,7 +24,8 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final strength = PasswordGenerator.calculateStrength(widget.password.password);
+    final strength =
+        PasswordGenerator.calculateStrength(widget.password.password);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,7 +37,9 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+              color: isDark
+                  ? AppColors.darkBgSecondary
+                  : AppColors.lightBgSecondary,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -52,7 +56,8 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => EditPasswordScreen(password: widget.password),
+                builder: (context) =>
+                    EditPasswordScreen(password: widget.password),
               ),
             ),
           ),
@@ -115,7 +120,8 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -139,7 +145,9 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                color: isDark
+                    ? AppColors.darkBgSecondary
+                    : AppColors.lightBgSecondary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -153,15 +161,20 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: strength.value,
-                        backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                        valueColor: AlwaysStoppedAnimation<Color>(_getStrengthColor(strength)),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            _getStrengthColor(strength)),
                         minHeight: 8,
                       ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: _getStrengthColor(strength).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -197,9 +210,7 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
               context,
               icon: Icons.lock_outline,
               label: 'Password',
-              value: _showPassword
-                  ? widget.password.password
-                  : '••••••••••••',
+              value: _showPassword ? widget.password.password : '••••••••••••',
               canCopy: true,
               copyValue: widget.password.password,
               isDark: isDark,
@@ -230,17 +241,23 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                  color: isDark
+                      ? AppColors.darkBgSecondary
+                      : AppColors.lightBgSecondary,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    color:
+                        isDark ? AppColors.darkBorder : AppColors.lightBorder,
                     width: 2,
                   ),
                 ),
                 child: Text(
                   widget.password.notes,
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
                     height: 1.5,
                   ),
                 ),
@@ -254,7 +271,9 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                color: isDark
+                    ? AppColors.darkBgSecondary
+                    : AppColors.lightBgSecondary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -263,7 +282,8 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
               ),
               child: Column(
                 children: [
-                  _buildInfoRow('Created', _formatDate(widget.password.createdAt)),
+                  _buildInfoRow(
+                      'Created', _formatDate(widget.password.createdAt)),
                   const Divider(height: 24),
                   _buildInfoRow('Category', widget.password.category),
                   const Divider(height: 24),
@@ -329,7 +349,10 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -373,7 +396,8 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         Text(
@@ -406,31 +430,77 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Password'),
-        content: Text(
-          'Are you sure you want to delete "${widget.password.title}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(vaultProvider.notifier).deletePassword(widget.password);
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Text('Delete Password'),
+              content: isDeleting
+                  ? const SizedBox(
+                      height: 100,
+                      child: Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.purple)),
+                    )
+                  : Text(
+                      'Are you sure you want to delete "${widget.password.title}"? This action cannot be undone.'),
+              actions: isDeleting
+                  ? []
+                  : [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          setDialogState(() => isDeleting = true);
+                          try {
+                            await ref
+                                .read(vaultProvider.notifier)
+                                .deletePassword(widget.password);
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close dialog
+                              Navigator.pop(context); // Go back to vault list
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      'Password deleted successfully'),
+                                  backgroundColor: AppColors.green,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              setDialogState(() => isDeleting = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to delete: $e'),
+                                  backgroundColor: AppColors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+            );
+          },
+        );
+      },
     );
   }
 }

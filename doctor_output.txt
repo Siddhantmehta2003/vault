@@ -1,0 +1,42 @@
+﻿[ΓêÜ] Flutter (Channel stable, 3.27.1, on Microsoft Windows [Version 10.0.26100.7171], locale en-IN)
+    ΓÇó Flutter version 3.27.1 on channel stable at E:\flutter
+    ΓÇó Upstream repository https://github.com/flutter/flutter.git
+    ΓÇó Framework revision 17025dd882 (1 year, 1 month ago), 2024-12-17 03:23:09 +0900
+    ΓÇó Engine revision cb4b5fff73
+    ΓÇó Dart version 3.6.0
+    ΓÇó DevTools version 2.40.2
+
+[ΓêÜ] Windows Version (Installed version of Windows is version 10 or higher)
+
+[!] Android toolchain - develop for Android devices (Android SDK version 30.0.3)
+    ΓÇó Android SDK at C:\Users\Owner\AppData\Local\Android\sdk
+    X cmdline-tools component is missing
+      Run `path/to/sdkmanager --install "cmdline-tools;latest"`
+      See https://developer.android.com/studio/command-line for more details.
+    X Android license status unknown.
+      Run `flutter doctor --android-licenses` to accept the SDK licenses.
+      See https://flutter.dev/to/windows-android-setup for more details.
+
+[ΓêÜ] Chrome - develop for the web
+    ΓÇó Chrome at C:\Program Files (x86)\Google\Chrome\Application\chrome.exe
+
+[ΓêÜ] Visual Studio - develop Windows apps (Visual Studio Build Tools 2019 16.11.45)
+    ΓÇó Visual Studio at C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools
+    ΓÇó Visual Studio Build Tools 2019 version 16.11.35826.135
+    ΓÇó Windows 10 SDK version 10.0.19041.0
+
+[ΓêÜ] Android Studio (version 4.0)
+    ΓÇó Android Studio at C:\Program Files\Android\Android Studio
+    ΓÇó Flutter plugin version 51.0.1
+    ΓÇó Dart plugin version 193.7547
+    ΓÇó Java version OpenJDK Runtime Environment (build 1.8.0_242-release-1644-b01)
+
+[ΓêÜ] Connected device (3 available)
+    ΓÇó Windows (desktop) ΓÇó windows ΓÇó windows-x64    ΓÇó Microsoft Windows [Version 10.0.26100.7171]
+    ΓÇó Chrome (web)      ΓÇó chrome  ΓÇó web-javascript ΓÇó Google Chrome 143.0.7499.193
+    ΓÇó Edge (web)        ΓÇó edge    ΓÇó web-javascript ΓÇó Microsoft Edge 143.0.3650.139
+
+[ΓêÜ] Network resources
+    ΓÇó All expected network resources are available.
+
+! Doctor found issues in 1 category.

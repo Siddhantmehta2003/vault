@@ -16,11 +16,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final LocalAuthentication auth = LocalAuthentication();
   bool? _isSetup;
   bool _isLoading = true;
   bool _canCheckBiometrics = false;
   bool _obscurePassword = true;
+  bool _isLoginLoading = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -41,6 +44,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void dispose() {
     _animationController.dispose();
     _controller.dispose();
+    _emailController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -59,6 +64,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
 
       if (mounted) {
+        final savedUsername = await ref.read(apiServiceProvider).getUsername();
+        if (savedUsername != null) {
+          _usernameController.text = savedUsername;
+        }
         setState(() {
           _isSetup = isSetup;
           _canCheckBiometrics = canCheck && isSupported;
@@ -88,7 +97,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               Text(
                 'Initializing...',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -136,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Title
                   RichText(
                     text: TextSpan(
@@ -159,17 +171,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     isSetup ? 'Welcome back' : 'Create your master password',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 48),
-                  
+
+                  // Signup Fields (Email & Username) - Only shown during first setup
+                  if (!isSetup) ...[
+                    // Email Field
+                    _buildInputField(
+                      controller: _emailController,
+                      hint: 'Email Address',
+                      icon: Icons.email_outlined,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 16),
+                    // Username Field
+                    _buildInputField(
+                      controller: _usernameController,
+                      hint: 'Username',
+                      icon: Icons.person_outline,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Password Field
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
                         width: 2,
                       ),
                     ),
@@ -183,9 +220,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                       cursorColor: AppColors.purple,
                       decoration: InputDecoration(
-                        hintText: isSetup ? 'Enter password' : 'Create password',
+                        hintText:
+                            isSetup ? 'Enter password' : 'Create password',
                         hintStyle: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.3),
                           letterSpacing: 0,
                         ),
                         border: InputBorder.none,
@@ -195,10 +236,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: AppColors.purple,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                       obscureText: _obscurePassword,
@@ -206,13 +250,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Submit Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: () => _submit(isSetup),
+                      onPressed:
+                          _isLoginLoading ? null : () => _submit(isSetup),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.purple,
                         foregroundColor: Colors.white,
@@ -221,16 +266,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text(
-                        isSetup ? 'Unlock' : 'Create Password',
-                        style: GoogleFonts.syne(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      child: _isLoginLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              isSetup ? 'Unlock' : 'Create Account & Vault',
+                              style: GoogleFonts.syne(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                     ),
                   ),
-                  
+
                   // Biometric Button
                   if (isSetup && _canCheckBiometrics) ...[
                     const SizedBox(height: 32),
@@ -245,10 +292,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+                          color: isDark
+                              ? AppColors.darkBgSecondary
+                              : AppColors.lightBgSecondary,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder,
                             width: 2,
                           ),
                         ),
@@ -265,7 +316,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -295,21 +349,102 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          width: 2,
+        ),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        cursorColor: AppColors.purple,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon, color: AppColors.purple),
+          hintStyle: TextStyle(
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _submit(bool isSetup) async {
-    if (!isSetup) {
-      if (_controller.text.length < 4) {
-        _showError('Password too short (min 4 characters)');
-        return;
+    final password = _controller.text;
+    if (password.isEmpty) {
+      _showError('Password is required');
+      return;
+    }
+
+    setState(() => _isLoginLoading = true);
+
+    try {
+      if (!isSetup) {
+        if (password.length < 4) {
+          _showError('Password too short (min 4 characters)');
+          return;
+        }
+        if (_emailController.text.isEmpty || _usernameController.text.isEmpty) {
+          _showError('All fields are required for setup');
+          return;
+        }
+
+        // 1. Initial local setup
+        await ref.read(authProvider.notifier).setPassword(password);
+
+        // 2. Backend registration
+        await ref.read(authProvider.notifier).register(
+              email: _emailController.text,
+              username: _usernameController.text,
+              password: password, // For simplicity using same for both
+              masterPassword: password,
+            );
+
+        if (mounted) setState(() => _isSetup = true);
+      } else {
+        // Unlock locally first to check if password is correct
+        final isValid =
+            await ref.read(authProvider.notifier).verifyPassword(password);
+        if (!isValid) {
+          _showError('Incorrect password');
+          return;
+        }
+
+        // Then login to backend
+        final username = _usernameController.text;
+        if (username.isNotEmpty) {
+          await ref.read(authProvider.notifier).login(
+                username: username,
+                password: password,
+                masterPassword: password,
+              );
+        } else {
+          // Fallback if username missing, though it shouldn't be
+          await ref.read(authProvider.notifier).unlock(password);
+        }
       }
-      await ref.read(authProvider.notifier).setPassword(_controller.text);
-      if (mounted) setState(() => _isSetup = true);
-      await ref.read(authProvider.notifier).unlock(_controller.text);
-    } else {
-      await ref.read(authProvider.notifier).unlock(_controller.text);
-      final isUnlocked = ref.read(authProvider);
-      if (!isUnlocked && mounted) {
-        _showError('Incorrect password');
-      }
+    } catch (e) {
+      if (mounted) _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoginLoading = false);
     }
   }
 

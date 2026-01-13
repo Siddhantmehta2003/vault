@@ -11,7 +11,7 @@ class VaultScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final passwords = ref.watch(vaultProvider);
+    final passwordsAsync = ref.watch(vaultProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -21,6 +21,10 @@ class VaultScreen extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => ref.read(vaultProvider.notifier).loadPasswords(),
+          ),
+          IconButton(
             icon: const Icon(Icons.lock_open),
             onPressed: () {
               ref.read(authProvider.notifier).lock();
@@ -29,125 +33,156 @@ class VaultScreen extends ConsumerWidget {
         ],
       ),
       body: TechnoBackground(
-        child: passwords.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.sd_storage_outlined,
-                        size: 64, color: Colors.white.withValues(alpha:0.2)),
-                    const SizedBox(height: 16),
-                    Text(
-                      'NO ENCRYPTED DATA FOUND',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha:0.5),
-                        fontFamily: 'Courier',
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
+        child: passwordsAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: Color(0xFF00FFC2)),
+          ),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 64, color: Colors.redAccent),
+                const SizedBox(height: 16),
+                Text(
+                  'SYNC ERROR: ${error.toString()}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white70, fontFamily: 'Courier'),
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.only(
-                    top: 80, left: 16, right: 16, bottom: 80),
-                itemCount: passwords.length,
-                itemBuilder: (context, index) {
-                  final item = passwords[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF101020).withValues(alpha:0.8),
-                      border: Border.all(
-                        color: const Color(0xFF00FFC2).withValues(alpha:0.3),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00FFC2)
-                              .withValues(alpha:index % 2 == 0 ? 0.05 : 0),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16),
-                      leading: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00FFC2).withValues(alpha:0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child:
-                            const Icon(Icons.vpn_key, color: Color(0xFF00FFC2)),
-                      ),
-                      title: Text(
-                        item.title.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () =>
+                      ref.read(vaultProvider.notifier).loadPasswords(),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00FFC2)),
+                  child: const Text('RETRY SYNC',
+                      style: TextStyle(color: Colors.black)),
+                ),
+              ],
+            ),
+          ),
+          data: (passwords) => passwords.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.sd_storage_outlined,
+                          size: 64, color: Colors.white.withValues(alpha: 0.2)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'NO ENCRYPTED DATA FOUND',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontFamily: 'Courier',
+                          letterSpacing: 2,
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(
-                            'USR: ${item.username}',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha:0.6),
-                              fontFamily: 'Courier',
-                            ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(
+                      top: 100, left: 16, right: 16, bottom: 80),
+                  itemCount: passwords.length,
+                  itemBuilder: (context, index) {
+                    final item = passwords[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF101020).withValues(alpha: 0.8),
+                        border: Border.all(
+                          color: const Color(0xFF00FFC2).withValues(alpha: 0.3),
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00FFC2)
+                                .withValues(alpha: index % 2 == 0 ? 0.05 : 0),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF00FFC2).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
-                          if (item.url.isNotEmpty)
+                          child: const Icon(Icons.vpn_key,
+                              color: Color(0xFF00FFC2)),
+                        ),
+                        title: Text(
+                          item.title.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
                             Text(
-                              'URL: ${item.url}',
-                              style: const TextStyle(
-                                color: Color(0xFFD600FF),
-                                fontSize: 10,
+                              'USR: ${item.username}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
                                 fontFamily: 'Courier',
                               ),
                             ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.copy,
-                                color: Color(0xFF00FFC2)),
-                            onPressed: () {
-                              Clipboard.setData(
-                                  ClipboardData(text: item.password));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('DECRYPTED TO CLIPBOARD'),
-                                  backgroundColor:
-                                      const Color(0xFF00FFC2).withValues(alpha:0.2),
+                            if (item.url.isNotEmpty)
+                              Text(
+                                'URL: ${item.url}',
+                                style: const TextStyle(
+                                  color: Color(0xFFD600FF),
+                                  fontSize: 10,
+                                  fontFamily: 'Courier',
                                 ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: Colors.redAccent),
-                            onPressed: () {
-                              // Confirm dialog could be cool here
-                              ref
-                                  .read(vaultProvider.notifier)
-                                  .deletePassword(item);
-                            },
-                          ),
-                        ],
+                              ),
+                          ],
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.copy,
+                                  color: Color(0xFF00FFC2)),
+                              onPressed: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: item.password));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        const Text('DECRYPTED TO CLIPBOARD'),
+                                    backgroundColor: const Color(0xFF00FFC2)
+                                        .withValues(alpha: 0.2),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.redAccent),
+                              onPressed: () {
+                                ref
+                                    .read(vaultProvider.notifier)
+                                    .deletePassword(item);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+        ),
       ),
-            floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00FFC2),
         foregroundColor: Colors.black,
         elevation: 10,
@@ -161,7 +196,7 @@ class VaultScreen extends ConsumerWidget {
           );
         },
         child: const Icon(Icons.add),
-      ), 
+      ),
     );
   }
 }

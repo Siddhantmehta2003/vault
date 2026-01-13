@@ -21,8 +21,7 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allPasswords = ref.watch(vaultProvider);
-    final passwords = _filterAndSort(allPasswords);
+    final allPasswordsAsync = ref.watch(vaultProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -52,7 +51,7 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.sort_by_alpha,
-                      color: _sortBy == 'name' ? AppColors.purple : null),
+                        color: _sortBy == 'name' ? AppColors.purple : null),
                     const SizedBox(width: 12),
                     const Text('Sort by Name'),
                   ],
@@ -63,7 +62,7 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.calendar_today,
-                      color: _sortBy == 'date' ? AppColors.purple : null),
+                        color: _sortBy == 'date' ? AppColors.purple : null),
                     const SizedBox(width: 12),
                     const Text('Sort by Date'),
                   ],
@@ -74,7 +73,7 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.category,
-                      color: _sortBy == 'category' ? AppColors.purple : null),
+                        color: _sortBy == 'category' ? AppColors.purple : null),
                     const SizedBox(width: 12),
                     const Text('Sort by Category'),
                   ],
@@ -84,71 +83,101 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Category Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                _buildFilterChip('All', null),
-                _buildFilterChip('Personal', 'Personal'),
-                _buildFilterChip('Work', 'Work'),
-                _buildFilterChip('Finance', 'Finance'),
-                _buildFilterChip('Social', 'Social'),
-                _buildFilterChip('Development', 'Development'),
-                _buildFilterChip('Other', 'Other'),
-              ],
-            ),
+      body: allPasswordsAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.purple),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.red),
+              const SizedBox(height: 16),
+              Text('Sync error: $error'),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () =>
+                    ref.read(vaultProvider.notifier).loadPasswords(),
+                child: const Text('RETRY SYNC'),
+              ),
+            ],
           ),
-
-          // Password Count
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${passwords.length} password${passwords.length != 1 ? 's' : ''}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w500,
-                  ),
+        ),
+        data: (allPasswords) {
+          final passwords = _filterAndSort(allPasswords);
+          return Column(
+            children: [
+              // Category Filter Chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', null),
+                    _buildFilterChip('Personal', 'Personal'),
+                    _buildFilterChip('Work', 'Work'),
+                    _buildFilterChip('Finance', 'Finance'),
+                    _buildFilterChip('Social', 'Social'),
+                    _buildFilterChip('Development', 'Development'),
+                    _buildFilterChip('Other', 'Other'),
+                  ],
                 ),
-                if (_selectedCategory != null)
-                  TextButton(
-                    onPressed: () => setState(() => _selectedCategory = null),
-                    child: const Text('Clear Filter'),
-                  ),
-              ],
-            ),
-          ),
+              ),
 
-          // Passwords List
-          Expanded(
-            child: passwords.isEmpty
-                ? _buildEmptyState(context)
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: passwords.length,
-                    itemBuilder: (context, index) {
-                      final password = passwords[index];
-                      return _buildPasswordCard(context, password, isDark);
-                    },
-                  ),
-          ),
-        ],
+              // Password Count
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${passwords.length} password${passwords.length != 1 ? 's' : ''}',
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (_selectedCategory != null)
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => _selectedCategory = null),
+                        child: const Text('Clear Filter'),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Passwords List
+              Expanded(
+                child: passwords.isEmpty
+                    ? _buildEmptyState(context)
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: passwords.length,
+                        itemBuilder: (context, index) {
+                          final password = passwords[index];
+                          return _buildPasswordCard(context, password, isDark);
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton.extended(shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12)),
+      floatingActionButton: FloatingActionButton.extended(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const AddPasswordScreen()),
         ),
         backgroundColor: AppColors.purple,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Password', style: TextStyle(color: Colors.white)),
+        label:
+            const Text('Add Password', style: TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -157,12 +186,14 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
     var filtered = passwords;
 
     if (_selectedCategory != null) {
-      filtered = filtered.where((p) => p.category == _selectedCategory).toList();
+      filtered =
+          filtered.where((p) => p.category == _selectedCategory).toList();
     }
 
     switch (_sortBy) {
       case 'name':
-        filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        filtered.sort(
+            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
         break;
       case 'date':
         filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -200,7 +231,8 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
     );
   }
 
-  Widget _buildPasswordCard(BuildContext context, PasswordModel password, bool isDark) {
+  Widget _buildPasswordCard(
+      BuildContext context, PasswordModel password, bool isDark) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -212,7 +244,8 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+          color:
+              isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -226,12 +259,15 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: _getCategoryColor(password.category).withValues(alpha: 0.1),
+                color:
+                    _getCategoryColor(password.category).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Center(
                 child: Text(
-                  password.title.isNotEmpty ? password.title[0].toUpperCase() : '?',
+                  password.title.isNotEmpty
+                      ? password.title[0].toUpperCase()
+                      : '?',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
@@ -255,17 +291,24 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    password.username.isNotEmpty ? password.username : 'No username',
+                    password.username.isNotEmpty
+                        ? password.username
+                        : 'No username',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(password.category).withValues(alpha: 0.1),
+                      color: _getCategoryColor(password.category)
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -301,7 +344,10 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.4),
                 ),
               ],
             ),
@@ -319,7 +365,8 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
           Icon(
             Icons.folder_open,
             size: 64,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           Text(
@@ -329,7 +376,10 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
@@ -337,7 +387,10 @@ class _VaultsScreenState extends ConsumerState<VaultsScreen> {
             'Tap the button below to add one',
             style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.4),
             ),
           ),
         ],

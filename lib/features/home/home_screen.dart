@@ -13,6 +13,7 @@ import '../vaults/vaults_screen.dart';
 import '../vaults/password_details_screen.dart';
 import '../team/team_screen.dart';
 import '../profile/profile_screen.dart';
+import '../auth/auth_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String? _selectedCategory;
+  String? _username;
 
   @override
   void initState() {
@@ -42,6 +44,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _animationController.forward();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final username = await ref.read(apiServiceProvider).getUsername();
+    if (mounted) {
+      setState(() => _username = username);
+    }
   }
 
   @override
@@ -55,15 +65,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     var filtered = passwords;
 
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((p) =>
-        p.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        p.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-        p.url.toLowerCase().contains(_searchQuery.toLowerCase())
-      ).toList();
+      filtered = filtered
+          .where((p) =>
+              p.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              p.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              p.url.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .toList();
     }
 
     if (_selectedCategory != null) {
-      filtered = filtered.where((p) => p.category == _selectedCategory).toList();
+      filtered =
+          filtered.where((p) => p.category == _selectedCategory).toList();
     }
 
     return filtered;
@@ -79,8 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final allPasswords = ref.watch(vaultProvider);
-    final passwords = _filterPasswords(allPasswords);
+    final allPasswordsAsync = ref.watch(vaultProvider);
     final themeNotifier = ref.watch(themeProvider.notifier);
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
 
@@ -96,31 +107,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               // Main Content
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildGreeting(context),
-                      const SizedBox(height: 24),
-                      _buildTabSwitcher(context),
-                      const SizedBox(height: 24),
-                      _buildSecurityStats(context, allPasswords.length),
-                      const SizedBox(height: 24),
-                      _buildSearchBox(context),
-                      const SizedBox(height: 24),
-                      if (_selectedTab == 0) ...[
-                        _buildQuickActions(context),
-                        const SizedBox(height: 24),
-                        _buildPasswordsList(context, passwords),
-                      ] else ...[
-                        _buildCategoriesGrid(context, allPasswords),
-                        const SizedBox(height: 24),
-                        _buildPasswordsList(context, passwords),
-                      ],
-                      const SizedBox(height: 100), // Bottom nav space
-                    ],
+                child: allPasswordsAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40.0),
+                      child: CircularProgressIndicator(color: AppColors.purple),
+                    ),
                   ),
+                  error: (error, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              size: 48, color: AppColors.red),
+                          const SizedBox(height: 16),
+                          Text('CONNECTION ERROR: ${error.toString()}'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref
+                                .read(vaultProvider.notifier)
+                                .loadPasswords(),
+                            child: const Text('RETRY'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  data: (allPasswords) {
+                    final passwords = _filterPasswords(allPasswords);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildGreeting(context),
+                          const SizedBox(height: 24),
+                          _buildTabSwitcher(context),
+                          const SizedBox(height: 24),
+                          _buildSecurityStats(context, allPasswords),
+                          const SizedBox(height: 24),
+                          _buildSearchBox(context),
+                          const SizedBox(height: 24),
+                          if (_selectedTab == 0) ...[
+                            _buildQuickActions(context),
+                            const SizedBox(height: 24),
+                            _buildPasswordsList(context, passwords),
+                          ] else ...[
+                            _buildCategoriesGrid(context, allPasswords),
+                            const SizedBox(height: 24),
+                            _buildPasswordsList(context, passwords),
+                          ],
+                          const SizedBox(height: 100), // Bottom nav space
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -199,7 +241,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const ProfileScreen()),
                 ),
                 child: Container(
                   width: 44,
@@ -208,10 +251,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     color: AppColors.purple,
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'JD',
-                      style: TextStyle(
+                      (_username ?? 'User').substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -236,7 +279,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+          color:
+              isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
           shape: BoxShape.circle,
           border: Border.all(
             color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -253,7 +297,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Team Dashboard',
+          'Hello, ${_username ?? 'Vault User'}',
           style: GoogleFonts.syne(
             fontSize: 32,
             fontWeight: FontWeight.w700,
@@ -263,10 +307,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          'Manage all your passwords securely',
+          'Your vault is secure and synced.',
           style: TextStyle(
             fontSize: 15,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -322,7 +367,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               fontWeight: FontWeight.w600,
               color: isSelected
                   ? Colors.white
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -330,23 +378,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildSecurityStats(BuildContext context, int totalPasswords) {
+  Widget _buildSecurityStats(
+      BuildContext context, List<PasswordModel> passwords) {
+    final total = passwords.length;
+    final strong = passwords.where((p) => p.password.length >= 12).length;
+    final weak = passwords.where((p) => p.password.length < 8).length;
+
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             context,
-            value: totalPasswords.toString(),
+            value: total.toString(),
             label: 'Total',
-            color: AppColors.green,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            value: '${(totalPasswords * 0.8).round()}',
-            label: 'Strong',
             color: AppColors.blue,
           ),
         ),
@@ -354,9 +398,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Expanded(
           child: _buildStatCard(
             context,
-            value: '${(totalPasswords * 0.1).round()}',
+            value: strong.toString(),
+            label: 'Strong',
+            color: AppColors.green,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            context,
+            value: weak.toString(),
             label: 'Weak',
-            color: AppColors.yellow,
+            color: AppColors.red,
           ),
         ),
       ],
@@ -392,7 +445,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -417,7 +473,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           hintText: 'Search passwords...',
           prefixIcon: Icon(
             Icons.search,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -499,7 +556,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         decoration: BoxDecoration(
           color: isPrimary
               ? AppColors.purple
-              : (isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary),
+              : (isDark
+                  ? AppColors.darkBgSecondary
+                  : AppColors.lightBgSecondary),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isPrimary
@@ -515,14 +574,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color:
-                    isPrimary ? Colors.white.withValues(alpha: 0.15) : (isDark ? AppColors.darkBgPrimary : AppColors.lightBgPrimary),
+                color: isPrimary
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : (isDark
+                        ? AppColors.darkBgPrimary
+                        : AppColors.lightBgPrimary),
                 borderRadius: BorderRadius.circular(12),
                 border: isPrimary
                     ? null
                     : Border.all(
-                        color:
-                            isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
                         width: 2,
                       ),
               ),
@@ -552,7 +615,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 fontSize: 12,
                 color: isPrimary
                     ? Colors.white.withValues(alpha: 0.8)
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    : Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -573,13 +639,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           content: const Text('Password copied to clipboard!'),
           backgroundColor: AppColors.purple,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
   }
 
-  Widget _buildCategoriesGrid(BuildContext context, List<PasswordModel> passwords) {
+  Widget _buildCategoriesGrid(
+      BuildContext context, List<PasswordModel> passwords) {
     final categoryCounts = _getCategoryCounts(passwords);
     final allCategories = [
       {'icon': Icons.person, 'name': 'Personal'},
@@ -650,7 +718,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildCategoryCard(BuildContext context,
-      {required IconData icon, required String name, required int count, bool isSelected = false, VoidCallback? onTap}) {
+      {required IconData icon,
+      required String name,
+      required int count,
+      bool isSelected = false,
+      VoidCallback? onTap}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
@@ -660,10 +732,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.purple.withValues(alpha: 0.1)
-              : (isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary),
+              : (isDark
+                  ? AppColors.darkBgSecondary
+                  : AppColors.lightBgSecondary),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.purple : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            color: isSelected
+                ? AppColors.purple
+                : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
             width: 2,
           ),
         ),
@@ -677,14 +753,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.purple.withValues(alpha: 0.2)
-                    : (isDark ? AppColors.darkBgPrimary : AppColors.lightBgPrimary),
+                    : (isDark
+                        ? AppColors.darkBgPrimary
+                        : AppColors.lightBgPrimary),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppColors.purple : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  color: isSelected
+                      ? AppColors.purple
+                      : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   width: 2,
                 ),
               ),
-              child: Icon(icon, size: 22, color: isSelected ? AppColors.purple : null),
+              child: Icon(icon,
+                  size: 22, color: isSelected ? AppColors.purple : null),
             ),
             const SizedBox(height: 12),
             Text(
@@ -699,7 +780,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               '$count passwords',
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -708,7 +792,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildPasswordsList(BuildContext context, List<PasswordModel> passwords) {
+  Widget _buildPasswordsList(
+      BuildContext context, List<PasswordModel> passwords) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -769,7 +854,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             Icon(
               Icons.lock_outline,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text(
@@ -777,7 +865,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -785,7 +876,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               'Tap + to add your first password',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -805,117 +899,121 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       child: Container(
         padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-          width: 2,
+        decoration: BoxDecoration(
+          color:
+              isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 2,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBgPrimary : AppColors.lightBgPrimary,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                item.title.isNotEmpty ? item.title[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color:
+                    isDark ? AppColors.darkBgPrimary : AppColors.lightBgPrimary,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                  width: 2,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
+              child: Center(
+                child: Text(
+                  item.title.isNotEmpty ? item.title[0].toUpperCase() : '?',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      item.username.isNotEmpty ? item.username : 'No username',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
-                      ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
-                    if (item.url.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.purple,
-                          borderRadius: BorderRadius.circular(6),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        item.username.isNotEmpty
+                            ? item.username
+                            : 'No username',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                         ),
-                        child: const Text(
-                          'URL',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                      ),
+                      if (item.url.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.purple,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'URL',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSmallActionButton(
+                  context,
+                  icon: Icons.copy,
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: item.password));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Password copied to clipboard'),
+                        backgroundColor: AppColors.purple,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildSmallActionButton(
+                  context,
+                  icon: Icons.delete_outline,
+                  onTap: () =>
+                      ref.read(vaultProvider.notifier).deletePassword(item),
                 ),
               ],
             ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildSmallActionButton(
-                context,
-                icon: Icons.copy,
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: item.password));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Password copied to clipboard'),
-                      backgroundColor: AppColors.purple,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 8),
-              _buildSmallActionButton(
-                context,
-                icon: Icons.delete_outline,
-                onTap: () =>
-                    ref.read(vaultProvider.notifier).deletePassword(item),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -1057,24 +1155,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           );
         },
         child: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          color: AppColors.purple,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.purple.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.add,
-          size: 28,
-          color: Colors.white,
-        ),
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: AppColors.purple,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.purple.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.add,
+            size: 28,
+            color: Colors.white,
+          ),
         ),
       ),
     );

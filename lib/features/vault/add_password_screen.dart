@@ -35,18 +35,20 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
     super.dispose();
   }
 
-  InputDecoration _buildInputDecoration(String label, IconData icon, {Widget? suffix}) {
+  InputDecoration _buildInputDecoration(String label, IconData icon,
+      {Widget? suffix}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: AppColors.purple),
       suffixIcon: suffix,
       labelStyle: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.6),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
         fontSize: 14,
       ),
       filled: true,
-      fillColor: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+      fillColor:
+          isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(
           color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -72,7 +74,7 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: RichText(
@@ -94,7 +96,9 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkBgSecondary : AppColors.lightBgSecondary,
+              color: isDark
+                  ? AppColors.darkBgSecondary
+                  : AppColors.lightBgSecondary,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -117,19 +121,21 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                 TextFormField(
                   controller: _titleController,
                   cursorColor: AppColors.purple,
-                  decoration: _buildInputDecoration('Title', Icons.label_outline),
+                  decoration:
+                      _buildInputDecoration('Title', Icons.label_outline),
                   validator: (v) => v!.isEmpty ? 'Title is required' : null,
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Username Field
                 TextFormField(
                   controller: _usernameController,
                   cursorColor: AppColors.purple,
-                  decoration: _buildInputDecoration('Username / Email', Icons.person_outline),
+                  decoration: _buildInputDecoration(
+                      'Username / Email', Icons.person_outline),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
@@ -141,10 +147,13 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                     Icons.lock_outline,
                     suffix: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: AppColors.purple,
                       ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
@@ -170,7 +179,7 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                 // Category Dropdown
                 _buildCategorySelector(),
                 const SizedBox(height: 20),
-                
+
                 // URL Field
                 TextFormField(
                   controller: _urlController,
@@ -178,21 +187,22 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                   decoration: _buildInputDecoration('Website URL', Icons.link),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Notes Field
                 TextFormField(
                   controller: _notesController,
                   cursorColor: AppColors.purple,
-                  decoration: _buildInputDecoration('Notes (optional)', Icons.note_outlined),
+                  decoration: _buildInputDecoration(
+                      'Notes (optional)', Icons.note_outlined),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Save Button
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.purple,
                       foregroundColor: Colors.white,
@@ -201,20 +211,22 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.lock, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Save Password',
-                          style: GoogleFonts.syne(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                    child: _isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.lock, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Save Password',
+                                style: GoogleFonts.syne(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ],
@@ -227,7 +239,14 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
 
   Widget _buildCategorySelector() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = ['Personal', 'Work', 'Finance', 'Social', 'Development', 'Other'];
+    final categories = [
+      'Personal',
+      'Work',
+      'Finance',
+      'Social',
+      'Development',
+      'Other'
+    ];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -249,7 +268,8 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
               value: category,
               child: Row(
                 children: [
-                  Icon(_getCategoryIcon(category), color: AppColors.purple, size: 20),
+                  Icon(_getCategoryIcon(category),
+                      color: AppColors.purple, size: 20),
                   const SizedBox(width: 12),
                   Text(category),
                 ],
@@ -264,12 +284,18 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case 'Work': return Icons.work;
-      case 'Finance': return Icons.attach_money;
-      case 'Social': return Icons.people;
-      case 'Development': return Icons.code;
-      case 'Other': return Icons.folder;
-      default: return Icons.person;
+      case 'Work':
+        return Icons.work;
+      case 'Finance':
+        return Icons.attach_money;
+      case 'Social':
+        return Icons.people;
+      case 'Development':
+        return Icons.code;
+      case 'Other':
+        return Icons.folder;
+      default:
+        return Icons.person;
     }
   }
 
@@ -284,20 +310,53 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
     }
   }
 
-  void _save() {
-    if (_formKey.currentState!.validate()) {
-      final newPass = PasswordModel(
-        id: const Uuid().v4(),
-        title: _titleController.text,
-        username: _usernameController.text,
-        password: _passwordController.text,
-        url: _urlController.text,
-        notes: _notesController.text,
-        category: _selectedCategory,
-      );
+  bool _isSaving = false;
 
-      ref.read(vaultProvider.notifier).addPassword(newPass);
-      Navigator.pop(context);
+  Future<void> _save() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
+      try {
+        final newPass = PasswordModel(
+          id: const Uuid().v4(),
+          title: _titleController.text,
+          username: _usernameController.text,
+          password: _passwordController.text,
+          url: _urlController.text,
+          notes: _notesController.text,
+          category: _selectedCategory,
+        );
+
+        await ref.read(vaultProvider.notifier).addPassword(newPass);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Password saved successfully!'),
+              backgroundColor: AppColors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to save password: $e'),
+              backgroundColor: AppColors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
+        }
+      }
     }
   }
 }
