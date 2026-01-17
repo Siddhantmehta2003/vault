@@ -18,6 +18,12 @@ class LoginRequest {
 class RegisterRequest {
   final String email;
   final String username;
+  @JsonKey(name: 'first_name')
+  final String firstName;
+  @JsonKey(name: 'last_name')
+  final String lastName;
+  @JsonKey(name: 'phone_number')
+  final String? phoneNumber;
   final String password;
   @JsonKey(name: 'master_password')
   final String masterPassword;
@@ -25,6 +31,9 @@ class RegisterRequest {
   RegisterRequest({
     required this.email,
     required this.username,
+    required this.firstName,
+    required this.lastName,
+    this.phoneNumber,
     required this.password,
     required this.masterPassword,
   });

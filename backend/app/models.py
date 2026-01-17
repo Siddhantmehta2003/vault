@@ -23,6 +23,9 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """User creation model"""
+    first_name: str
+    last_name: str
+    phone_number: Optional[str] = None
     password: str
     master_password: str
 
@@ -42,6 +45,9 @@ class UserInDB(UserBase):
     )
     
     id: PyObjectId = Field(alias="_id")
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
     hashed_password: str
     hashed_master_password: str
     created_at: datetime
@@ -57,6 +63,9 @@ class User(UserBase):
     )
     
     id: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone_number: Optional[str] = None
     created_at: datetime
 
 

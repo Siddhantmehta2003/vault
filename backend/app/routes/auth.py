@@ -44,6 +44,9 @@ async def register(
     user_doc = {
         "email": user_data.email,
         "username": user_data.username,
+        "first_name": user_data.first_name,
+        "last_name": user_data.last_name,
+        "phone_number": user_data.phone_number,
         "hashed_password": hashed_password,
         "hashed_master_password": hashed_master_password,
         "created_at": datetime.utcnow(),

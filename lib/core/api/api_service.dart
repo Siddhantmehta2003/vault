@@ -11,6 +11,7 @@ class ApiService {
   static const String _masterPasswordKey = 'master_password';
   static const String _usernameKey = 'username';
   static const String _emailKey = 'email';
+  static const String _passwordKey = 'saved_password'; // For auto-fill
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -79,11 +80,33 @@ class ApiService {
     return await _storage.read(key: _emailKey);
   }
 
+  Future<void> savePassword(String password) async {
+    await _storage.write(key: _passwordKey, value: password);
+  }
+
+  Future<String?> getPassword() async {
+    return await _storage.read(key: _passwordKey);
+  }
+
   Future<void> clearAuth() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _masterPasswordKey);
     await _storage.delete(key: _usernameKey);
     await _storage.delete(key: _emailKey);
+    await _storage.delete(key: _passwordKey);
+  }
+
+  /// Clears auth token but keeps username and password for auto-fill
+  Future<void> clearAuthKeepCredentials() async {
+    await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _masterPasswordKey);
+  }
+
+  /// Check if user has saved credentials
+  Future<bool> hasSavedCredentials() async {
+    final username = await getUsername();
+    final password = await getPassword();
+    return username != null && password != null && username.isNotEmpty && password.isNotEmpty;
   }
 
   Future<TokenResponse> register(RegisterRequest request) async {

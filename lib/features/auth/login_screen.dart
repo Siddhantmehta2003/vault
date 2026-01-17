@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:password_manager/core/theme/app_theme.dart';
 import 'auth_provider.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,15 +16,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _controller = TextEditingController();
-  final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final LocalAuthentication auth = LocalAuthentication();
-  bool? _isSetup;
+  
   bool _isLoading = true;
-  bool _canCheckBiometrics = false;
-  bool _obscurePassword = true;
   bool _isLoginLoading = false;
+  bool _obscurePassword = true;
+  bool _canCheckBiometrics = false;
+  bool _hasSavedCredentials = false;
+  
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -37,25 +39,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    _checkSetup();
+    _initializeScreen();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
-    _controller.dispose();
-    _emailController.dispose();
     _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _checkSetup() async {
+  Future<void> _initializeScreen() async {
     try {
-      final isSetup = await ref.read(authProvider.notifier).isPasswordSet();
+      final apiService = ref.read(apiServiceProvider);
+      
+      // Load saved credentials for auto-fill
+      final savedUsername = await apiService.getUsername();
+      final savedPassword = await apiService.getPassword();
+      
+      if (savedUsername != null && savedUsername.isNotEmpty) {
+        _usernameController.text = savedUsername;
+      }
+      if (savedPassword != null && savedPassword.isNotEmpty) {
+        _passwordController.text = savedPassword;
+        _hasSavedCredentials = true;
+      }
 
+      // Check biometrics availability
       bool canCheck = false;
       bool isSupported = false;
-
       try {
         canCheck = await auth.canCheckBiometrics;
         isSupported = await auth.isDeviceSupported();
@@ -64,22 +77,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
 
       if (mounted) {
-        final savedUsername = await ref.read(apiServiceProvider).getUsername();
-        if (savedUsername != null) {
-          _usernameController.text = savedUsername;
-        }
         setState(() {
-          _isSetup = isSetup;
-          _canCheckBiometrics = canCheck && isSupported;
+          _canCheckBiometrics = canCheck && isSupported && _hasSavedCredentials;
           _isLoading = false;
         });
         _animationController.forward();
       }
     } catch (_) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
+        _animationController.forward();
       }
     }
   }
@@ -95,7 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               const CircularProgressIndicator(color: AppColors.purple),
               const SizedBox(height: 24),
               Text(
-                'Initializing...',
+                'Loading...',
                 style: TextStyle(
                   color: Theme.of(context)
                       .colorScheme
@@ -109,18 +116,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       );
     }
 
-    if (_isSetup == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            'System Error',
-            style: TextStyle(color: AppColors.red),
-          ),
-        ),
-      );
-    }
-
-    final isSetup = _isSetup!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -168,7 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    isSetup ? 'Welcome back' : 'Create your master password',
+                    _hasSavedCredentials ? 'Welcome back' : 'Login to continue',
                     style: TextStyle(
                       fontSize: 16,
                       color: Theme.of(context)
@@ -179,25 +174,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                   const SizedBox(height: 48),
 
-                  // Signup Fields (Email & Username) - Only shown during first setup
-                  if (!isSetup) ...[
-                    // Email Field
-                    _buildInputField(
-                      controller: _emailController,
-                      hint: 'Email Address',
-                      icon: Icons.email_outlined,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 16),
-                    // Username Field
-                    _buildInputField(
-                      controller: _usernameController,
-                      hint: 'Username',
-                      icon: Icons.person_outline,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  // Username Field
+                  _buildInputField(
+                    controller: _usernameController,
+                    hint: 'Username',
+                    icon: Icons.person_outline,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 16),
 
                   // Password Field
                   Container(
@@ -211,23 +195,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     ),
                     child: TextField(
-                      controller: _controller,
-                      textAlign: TextAlign.center,
+                      controller: _passwordController,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 4,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                       cursorColor: AppColors.purple,
                       decoration: InputDecoration(
-                        hintText:
-                            isSetup ? 'Enter password' : 'Create password',
+                        hintText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.purple),
                         hintStyle: TextStyle(
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
                               .withValues(alpha: 0.3),
-                          letterSpacing: 0,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -246,18 +227,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                       ),
                       obscureText: _obscurePassword,
-                      onSubmitted: (_) => _submit(isSetup),
+                      onSubmitted: (_) => _handleLogin(),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Submit Button
+                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed:
-                          _isLoginLoading ? null : () => _submit(isSetup),
+                      onPressed: _isLoginLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.purple,
                         foregroundColor: Colors.white,
@@ -269,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       child: _isLoginLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
-                              isSetup ? 'Unlock' : 'Create Account & Vault',
+                              'Login',
                               style: GoogleFonts.syne(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -279,8 +259,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
 
                   // Biometric Button
-                  if (isSetup && _canCheckBiometrics) ...[
-                    const SizedBox(height: 32),
+                  if (_canCheckBiometrics) ...[
+                    const SizedBox(height: 24),
                     const Text(
                       'or',
                       style: TextStyle(color: Colors.grey),
@@ -323,6 +303,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                     ),
                   ],
+
+                  const SizedBox(height: 32),
+
+                  // Signup Link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SignupScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            color: AppColors.purple,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -330,23 +345,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
       ),
     );
-  }
-
-  Future<void> _authenticateWithBiometrics() async {
-    try {
-      final authenticated = await auth.authenticate(
-        localizedReason: 'Scan your biometric to authenticate',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false,
-        ),
-      );
-      if (authenticated && mounted) {
-        ref.read(authProvider.notifier).unlockWithBiometrics();
-      }
-    } on PlatformException catch (e) {
-      if (mounted) _showError(e.message ?? 'Biometric Error');
-    }
   }
 
   Widget _buildInputField({
@@ -374,8 +372,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           hintText: hint,
           prefixIcon: Icon(icon, color: AppColors.purple),
           hintStyle: TextStyle(
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
@@ -387,8 +384,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Future<void> _submit(bool isSetup) async {
-    final password = _controller.text;
+  Future<void> _handleLogin() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty) {
+      _showError('Username is required');
+      return;
+    }
     if (password.isEmpty) {
       _showError('Password is required');
       return;
@@ -397,54 +400,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     setState(() => _isLoginLoading = true);
 
     try {
-      if (!isSetup) {
-        if (password.length < 4) {
-          _showError('Password too short (min 4 characters)');
-          return;
-        }
-        if (_emailController.text.isEmpty || _usernameController.text.isEmpty) {
-          _showError('All fields are required for setup');
-          return;
-        }
+      // Login to backend
+      await ref.read(authProvider.notifier).login(
+        username: username,
+        password: password,
+        masterPassword: password,
+      );
 
-        // 1. Initial local setup
-        await ref.read(authProvider.notifier).setPassword(password);
+      // Set local master password for offline access
+      await ref.read(authProvider.notifier).setPassword(password);
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoginLoading = false);
+      }
+    }
+  }
 
-        // 2. Backend registration
-        await ref.read(authProvider.notifier).register(
-              email: _emailController.text,
-              username: _usernameController.text,
-              password: password, // For simplicity using same for both
-              masterPassword: password,
-            );
-
-        if (mounted) setState(() => _isSetup = true);
-      } else {
-        // Unlock locally first to check if password is correct
-        final isValid =
-            await ref.read(authProvider.notifier).verifyPassword(password);
-        if (!isValid) {
-          _showError('Incorrect password');
-          return;
-        }
-
-        // Then login to backend
-        final username = _usernameController.text;
-        if (username.isNotEmpty) {
-          await ref.read(authProvider.notifier).login(
-                username: username,
-                password: password,
-                masterPassword: password,
-              );
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      final authenticated = await auth.authenticate(
+        localizedReason: 'Scan your biometric to authenticate',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false,
+        ),
+      );
+      
+      if (authenticated && mounted) {
+        // Use saved credentials to login
+        final password = _passwordController.text;
+        if (password.isNotEmpty) {
+          await _handleLogin();
         } else {
-          // Fallback if username missing, though it shouldn't be
-          await ref.read(authProvider.notifier).unlock(password);
+          ref.read(authProvider.notifier).unlockWithBiometrics();
         }
       }
-    } catch (e) {
-      if (mounted) _showError(e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoginLoading = false);
+    } on PlatformException catch (e) {
+      if (mounted) _showError(e.message ?? 'Biometric Error');
     }
   }
 

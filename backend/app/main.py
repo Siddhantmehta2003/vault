@@ -5,7 +5,7 @@ import logging
 
 from .database import Database
 from .config import settings
-from .routes import auth, passwords
+from .routes import auth, passwords, email
 
 # Configure logging
 logging.basicConfig(
@@ -51,6 +51,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(passwords.router, prefix="/api")
+app.include_router(email.router, prefix="/api")
 
 
 @app.get("/")

@@ -38,6 +38,9 @@ class AuthNotifier extends StateNotifier<bool> {
   Future<void> register({
     required String email,
     required String username,
+    required String firstName,
+    required String lastName,
+    String? phoneNumber,
     required String password,
     required String masterPassword,
   }) async {
@@ -45,12 +48,16 @@ class AuthNotifier extends StateNotifier<bool> {
       final request = RegisterRequest(
         email: email,
         username: username,
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
         password: password,
         masterPassword: masterPassword,
       );
 
       await _apiService.register(request);
-      await _apiService.saveEmail(email); // Save email locally
+      await _apiService.saveEmail(email);
+      await _apiService.savePassword(password); // Save password for auto-fill
       await login(
           username: username,
           password: password,
@@ -68,8 +75,8 @@ class AuthNotifier extends StateNotifier<bool> {
     try {
       await _apiService.login(username, password);
       await _apiService.saveMasterPassword(masterPassword);
-      // We should also save the username for future logins
       await _apiService.saveUsername(username);
+      await _apiService.savePassword(password); // Save password for auto-fill
       state = true;
     } catch (e) {
       rethrow;
@@ -90,7 +97,8 @@ class AuthNotifier extends StateNotifier<bool> {
   }
 
   Future<void> logout() async {
-    await _apiService.clearAuth();
+    // Don't clear username and password - keep them for auto-fill
+    await _apiService.clearAuthKeepCredentials();
     state = false;
   }
 }
