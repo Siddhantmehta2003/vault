@@ -1,3 +1,4 @@
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import Optional
 import logging
@@ -20,6 +21,7 @@ class Database:
             logger.info("Connecting to MongoDB Atlas...")
             cls.client = AsyncIOMotorClient(
                 settings.mongodb_url,
+                tlsCAFile=certifi.where(),
                 serverSelectionTimeoutMS=5000,
                 connectTimeoutMS=10000,
                 socketTimeoutMS=10000,
