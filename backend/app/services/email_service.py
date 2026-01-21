@@ -75,6 +75,13 @@ class EmailService:
         subject = f"Security Alert - {self.app_name}"
         html = self._get_security_alert_template(username, alert_type, details)
         return self._send_email(to, subject, html)
+
+    def send_team_invite_email(self, to: str, team_name: str, invite_code: str, inviter_name: str) -> Dict[str, Any]:
+        """Send team invitation email"""
+        subject = f"Join {team_name} on {self.app_name}"
+        html = self._get_team_invite_template(team_name, invite_code, inviter_name)
+        return self._send_email(to, subject, html)
+
     
     def send_bulk_emails(self, recipients: List[Dict[str, str]], subject: str, html: str) -> List[Dict[str, Any]]:
         """Send same email to multiple recipients"""
@@ -287,6 +294,28 @@ class EmailService:
             </div>
 """
         return self._get_base_template(content)
+
+    def _get_team_invite_template(self, team_name: str, invite_code: str, inviter_name: str) -> str:
+        """Team invitation email template"""
+        content = f"""
+            <h2 style="color: #18181b; margin: 0 0 16px 0; font-size: 24px;">You've been invited!</h2>
+            <p style="color: #3f3f46; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi there,<br><br>
+                <strong>{inviter_name}</strong> has invited you to join the team <strong>{team_name}</strong> on {self.app_name}.
+            </p>
+            <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px;">
+                <p style="color: rgba(255,255,255,0.8); margin: 0 0 8px 0; font-size: 14px;">Team Join Code</p>
+                <p style="color: #ffffff; font-size: 36px; font-weight: 700; letter-spacing: 4px; margin: 0;">{invite_code}</p>
+            </div>
+            <p style="color: #3f3f46; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
+                To join, open the {self.app_name} app and enter the code above in the Team section.
+            </p>
+            <p style="color: #71717a; font-size: 12px; margin: 24px 0 0 0;">
+                If you don't have the app yet, please contact your administrator.
+            </p>
+"""
+        return self._get_base_template(content)
+
 
 
 # Create singleton instance

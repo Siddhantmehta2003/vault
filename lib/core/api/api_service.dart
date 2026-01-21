@@ -5,6 +5,7 @@ import 'models/api_models.dart';
 
 class ApiService {
   late final Dio _dio;
+  Dio get dio => _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   static const String _tokenKey = 'auth_token';
@@ -106,7 +107,10 @@ class ApiService {
   Future<bool> hasSavedCredentials() async {
     final username = await getUsername();
     final password = await getPassword();
-    return username != null && password != null && username.isNotEmpty && password.isNotEmpty;
+    return username != null &&
+        password != null &&
+        username.isNotEmpty &&
+        password.isNotEmpty;
   }
 
   Future<TokenResponse> register(RegisterRequest request) async {

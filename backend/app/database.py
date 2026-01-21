@@ -67,6 +67,7 @@ class Database:
             
             # Passwords collection indexes
             await cls.db.passwords.create_index("user_id")
+            await cls.db.passwords.create_index("shared_vault_id")
             await cls.db.passwords.create_index([("user_id", 1), ("category", 1)])
             await cls.db.passwords.create_index([("user_id", 1), ("created_at", -1)])
             await cls.db.passwords.create_index([
@@ -74,6 +75,14 @@ class Database:
                 ("title", "text"),
                 ("username", "text")
             ])
+            
+            # Teams collection indexes
+            await cls.db.teams.create_index("code", unique=True)
+            await cls.db.teams.create_index("members.user_id")
+            
+            # Shared Vaults collection indexes
+            await cls.db.shared_vaults.create_index("team_id")
+
             
             logger.info("Database indexes created successfully")
             

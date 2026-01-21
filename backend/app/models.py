@@ -44,7 +44,7 @@ class UserInDB(UserBase):
         json_encoders={ObjectId: str}
     )
     
-    id: PyObjectId = Field(alias="_id")
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone_number: Optional[str] = None
@@ -52,6 +52,7 @@ class UserInDB(UserBase):
     hashed_master_password: str
     created_at: datetime
     updated_at: datetime
+
 
 
 class User(UserBase):
@@ -78,6 +79,8 @@ class PasswordBase(BaseModel):
     url: Optional[str] = ""
     notes: Optional[str] = ""
     category: str = "Personal"
+    shared_vault_id: Optional[str] = None
+
 
 
 class PasswordCreate(PasswordBase):
@@ -93,6 +96,8 @@ class PasswordUpdate(BaseModel):
     url: Optional[str] = None
     notes: Optional[str] = None
     category: Optional[str] = None
+    shared_vault_id: Optional[str] = None
+
 
 
 class PasswordInDB(PasswordBase):
@@ -125,6 +130,8 @@ class Password(BaseModel):
     url: str
     notes: str
     category: str
+    shared_vault_id: Optional[str] = None
+
     created_at: datetime
     updated_at: datetime
 
@@ -153,3 +160,100 @@ class PasswordListResponse(BaseModel):
     """Password list response"""
     passwords: list[Password]
     total: int
+
+
+# Team Models
+class TeamMember(BaseModel):
+    """Team member model"""
+    user_id: str
+    role: str = "Viewer"  # Admin, Editor, Viewer
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TeamBase(BaseModel):
+    """Base team model"""
+    name: str
+
+
+class TeamCreate(TeamBase):
+    """Team creation model"""
+    pass
+
+
+class TeamInDB(TeamBase):
+    """Team model as stored in database"""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    code: str
+    created_by: str
+    members: list[TeamMember]
+    created_at: datetime
+    updated_at: datetime
+
+
+
+class Team(TeamBase):
+    """Team response model"""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
+    id: str
+    code: str
+    created_by: str
+    role: Optional[str] = None  # Current user's role
+    member_count: int
+    created_at: datetime
+
+
+# Shared Vault Models
+class SharedVaultBase(BaseModel):
+    """Base shared vault model"""
+    name: str
+
+
+
+class SharedVaultCreate(SharedVaultBase):
+    """Shared vault creation model"""
+    member_ids: list[str] = []
+
+
+class SharedVaultInDB(SharedVaultBase):
+    """Shared vault model as stored in database"""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    team_id: str
+    created_by: str
+    member_ids: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+
+
+class SharedVault(SharedVaultBase):
+    """Shared vault response model"""
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
+    id: str
+    team_id: str
+    created_by: str
+    member_ids: list[str]
+    password_count: int = 0
+    created_at: datetime
+

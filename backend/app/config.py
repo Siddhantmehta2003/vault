@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # Email settings (Resend)
     resend_api_key: str = "re_iM1PeVEe_F1wb5AnuJfJnb2XuucgsPER3"
-    email_from: str = "Vault <onboarding@resend.dev>"
+    email_from: str = "onboarding@resend.dev"
     
     # CORS settings (as string, will be split)
     cors_origins_str: str = "*"

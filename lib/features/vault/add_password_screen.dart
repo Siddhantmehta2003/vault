@@ -7,6 +7,8 @@ import 'package:password_manager/widgets/password_strength_indicator.dart';
 import 'package:password_manager/widgets/password_generator_dialog.dart';
 import 'models/password_model.dart';
 import 'vault_provider.dart';
+import '../team/providers/team_provider.dart';
+import '../team/models/team_models.dart';
 
 class AddPasswordScreen extends ConsumerStatefulWidget {
   const AddPasswordScreen({super.key});
@@ -24,6 +26,11 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
   final _notesController = TextEditingController();
   bool _obscurePassword = true;
   String _selectedCategory = 'Personal';
+
+  // Shared Vault Selection
+  bool _addToSharedVault = false;
+  String? _selectedTeamId;
+  String? _selectedVaultId;
 
   @override
   void dispose() {
@@ -180,6 +187,10 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
                 _buildCategorySelector(),
                 const SizedBox(height: 20),
 
+                // Shared Vault Selector
+                _buildSharedVaultSelector(),
+                const SizedBox(height: 20),
+
                 // URL Field
                 TextFormField(
                   controller: _urlController,
@@ -299,6 +310,123 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
     }
   }
 
+  Widget _buildSharedVaultSelector() {
+    final teamsAsync = ref.watch(myTeamsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (teamsAsync.asData?.value.isEmpty ?? true) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text("Add to Shared Vault",
+              style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w600)),
+          value: _addToSharedVault,
+          onChanged: (val) {
+            setState(() {
+              _addToSharedVault = val;
+              if (val && _selectedTeamId == null) {
+                // Default select first team
+                final teams = teamsAsync.asData?.value;
+                if (teams != null && teams.isNotEmpty) {
+                  _selectedTeamId = teams.first.id;
+                }
+              }
+            });
+          },
+          activeColor: AppColors.purple,
+        ),
+        if (_addToSharedVault) ...[
+          const SizedBox(height: 8),
+          // Team Dropdown
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.darkBgSecondary
+                  : AppColors.lightBgSecondary,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedTeamId,
+                isExpanded: true,
+                hint: const Text("Select Team"),
+                items: teamsAsync.asData?.value.map((team) {
+                  return DropdownMenuItem(
+                    value: team.id,
+                    child: Text(team.name),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedTeamId = val;
+                    _selectedVaultId = null; // Reset vault when team changes
+                  });
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Vault Dropdown
+          if (_selectedTeamId != null)
+            Consumer(builder: (context, ref, _) {
+              final vaultsAsync =
+                  ref.watch(teamVaultsProvider(_selectedTeamId!));
+              return vaultsAsync.when(
+                data: (vaults) {
+                  if (vaults.isEmpty) {
+                    return const Text("No shared vaults in this team.",
+                        style: TextStyle(color: Colors.red));
+                  }
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkBgSecondary
+                          : AppColors.lightBgSecondary,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: isDark
+                              ? AppColors.darkBorder
+                              : AppColors.lightBorder),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedVaultId,
+                        isExpanded: true,
+                        hint: const Text("Select Vault"),
+                        items: vaults.map((vault) {
+                          return DropdownMenuItem(
+                            value: vault.id,
+                            child: Text(vault.name),
+                          );
+                        }).toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedVaultId = val),
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (_, __) => const Text("Error loading vaults"),
+              );
+            })
+        ]
+      ],
+    );
+  }
+
   Future<void> _showPasswordGenerator() async {
     final result = await showDialog<String>(
       context: context,
@@ -324,9 +452,27 @@ class _AddPasswordScreenState extends ConsumerState<AddPasswordScreen> {
           url: _urlController.text,
           notes: _notesController.text,
           category: _selectedCategory,
+          sharedVaultId: (_addToSharedVault && _selectedVaultId != null)
+              ? _selectedVaultId
+              : null,
         );
 
-        await ref.read(vaultProvider.notifier).addPassword(newPass);
+        if (_addToSharedVault &&
+            _selectedTeamId != null &&
+            _selectedVaultId != null) {
+          // Save to shared vault via API directly or provider
+          // We need a method in team provider or vault provider to add to shared vault
+          // Let's use apiService directly or extend vault provider.
+          // Actually, vaultProvider stores local list which is mostly personal.
+          // Shared passwords should probably be managed by TeamController OR we just call API here.
+
+          // NOTE: The current PasswordModel might not have sharedVaultId if not updated yet.
+          // Let's modify PasswordModel first (in previous steps if I missed it).
+          await ref.read(teamServiceProvider).createSharedPassword(
+              _selectedTeamId!, _selectedVaultId!, newPass);
+        } else {
+          await ref.read(vaultProvider.notifier).addPassword(newPass);
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

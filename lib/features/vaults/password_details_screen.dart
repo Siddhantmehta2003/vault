@@ -7,6 +7,7 @@ import '../../core/services/password_generator.dart';
 import '../vault/vault_provider.dart';
 import '../vault/models/password_model.dart';
 import 'edit_password_screen.dart';
+import '../team/providers/team_provider.dart';
 
 class PasswordDetailsScreen extends ConsumerStatefulWidget {
   final PasswordModel password;
@@ -263,6 +264,26 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
                 ),
               ),
             ],
+
+            // Add to Shared Vault Button
+            if (widget.password.sharedVaultId == null) ...[
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showShareDialog(context),
+                  icon: const Icon(Icons.share),
+                  label: const Text("Add to Team Vault"),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.purple,
+                      side: const BorderSide(color: AppColors.purple),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                ),
+              )
+            ],
+
             const SizedBox(height: 24),
 
             // Meta Info
@@ -501,6 +522,127 @@ class _PasswordDetailsScreenState extends ConsumerState<PasswordDetailsScreen> {
           },
         );
       },
+    );
+  }
+
+  void _showShareDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => _ShareVaultDialog(password: widget.password),
+    );
+  }
+}
+
+class _ShareVaultDialog extends ConsumerStatefulWidget {
+  final PasswordModel password;
+  const _ShareVaultDialog({required this.password});
+
+  @override
+  ConsumerState<_ShareVaultDialog> createState() => _ShareVaultDialogState();
+}
+
+class _ShareVaultDialogState extends ConsumerState<_ShareVaultDialog> {
+  String? _selectedTeamId;
+  String? _selectedVaultId;
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final teamsAsync = ref.watch(myTeamsProvider);
+
+    return AlertDialog(
+      title: const Text("Share Password"),
+      content: teamsAsync.when(
+        data: (teams) {
+          if (teams.isEmpty)
+            return const Text("You need to join a team first.");
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                  value: _selectedTeamId,
+                  hint: const Text("Select Team"),
+                  items: teams
+                      .map((t) =>
+                          DropdownMenuItem(value: t.id, child: Text(t.name)))
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedTeamId = val;
+                      _selectedVaultId = null;
+                    });
+                  }),
+              const SizedBox(height: 16),
+              if (_selectedTeamId != null)
+                Consumer(builder: (context, ref, _) {
+                  final vaultsAsync =
+                      ref.watch(teamVaultsProvider(_selectedTeamId!));
+                  return vaultsAsync.when(
+                    data: (vaults) {
+                      if (vaults.isEmpty)
+                        return const Text("No shared vaults found.");
+                      return DropdownButtonFormField<String>(
+                          value: _selectedVaultId,
+                          hint: const Text("Select Vault"),
+                          items: vaults
+                              .map((v) => DropdownMenuItem(
+                                  value: v.id, child: Text(v.name)))
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedVaultId = val));
+                    },
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, __) => const Text("Error loading vaults"),
+                  );
+                })
+            ],
+          );
+        },
+        loading: () => const CircularProgressIndicator(),
+        error: (e, s) => Text("Error: $e"),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel")),
+        if (_selectedVaultId != null)
+          TextButton(
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    setState(() => _isLoading = true);
+                    try {
+                      await ref.read(teamServiceProvider).createSharedPassword(
+                          _selectedTeamId!, _selectedVaultId!, widget.password);
+
+                      // Ideally update local model too to reflect it's shared
+                      widget.password.sharedVaultId = _selectedVaultId;
+                      widget.password.save(); // Hive save
+
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Password shared!"),
+                                backgroundColor: AppColors.green));
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("Failed: $e"),
+                            backgroundColor: AppColors.red));
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isLoading = false);
+                    }
+                  },
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20, height: 20, child: CircularProgressIndicator())
+                : const Text("Share"),
+          )
+      ],
     );
   }
 }
